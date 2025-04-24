@@ -287,7 +287,7 @@ const PatientHistoryPage = () => {
                   <h2 className="text-xl font-semibold text-gray-900">
                     Patient Information
                   </h2>
-                  <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                  <p className="mt-1 max-w-2xl text-sm text-black">
                     Personal and medical aid details
                   </p>
                 </div>
@@ -304,31 +304,31 @@ const PatientHistoryPage = () => {
               <div className="border-t border-gray-200">
                 <dl>
                   <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Full name</dt>
+                    <dt className="text-sm font-medium text-black">Full name</dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {selectedPatient['Patient First Name']} {selectedPatient['Patient Last Name']}
                     </dd>
                   </div>
                   <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Date of birth</dt>
+                    <dt className="text-sm font-medium text-black">Date of birth</dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {formatDate(selectedPatient['Patient Date of Birth'])} ({calculateAge(selectedPatient['Patient Date of Birth'])} years)
                     </dd>
                   </div>
                   <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Gender</dt>
+                    <dt className="text-sm font-medium text-black">Gender</dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {selectedPatient['Patient Gender']}
                     </dd>
                   </div>
                   <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Medical aid</dt>
+                    <dt className="text-sm font-medium text-black">Medical aid</dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {selectedPatient['Medical Aid Name']} - {selectedPatient['Medical Aid Scheme/Plan']}
                     </dd>
                   </div>
                   <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Medical aid number</dt>
+                    <dt className="text-sm font-medium text-black">Medical aid number</dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {selectedPatient['Medical Aid Number']} (Dependant code: {selectedPatient['Dependant Code']})
                     </dd>
@@ -340,7 +340,7 @@ const PatientHistoryPage = () => {
             <div className="bg-white shadow rounded-lg p-6 text-center">
               <Users className="h-12 w-12 text-gray-400 mx-auto" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No patient selected</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-black">
                 Search for a patient by name to view their history
               </p>
             </div>
@@ -369,7 +369,7 @@ const PatientHistoryPage = () => {
                 <h2 className="text-xl font-semibold text-gray-900">
                   Procedure History
                 </h2>
-                <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                <p className="mt-1 max-w-2xl text-sm text-black">
                   List of all procedures performed for this patient
                 </p>
               </div>
@@ -379,55 +379,41 @@ const PatientHistoryPage = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Procedure
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Location
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Duration
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cost
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Payment Status
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Payment Method
-                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Procedure</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {patientProcedures.map((procedure) => (
                         <tr key={procedure['Procedure Record ID']} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             <div className="flex items-center">
                               <Calendar className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                               {procedure['Date of Service'] ? formatDate(procedure['Date of Service']) : 'No date'}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             <div>
                               <div className="font-medium">{procedure['Procedure Description']}</div>
-                              <div className="text-gray-500">{procedure['Diagnosis Description']}</div>
+                              <div className="text-black">{procedure['Diagnosis Description']}</div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             {/* Use hospital name from a lookup if available */}
                             {procedure['Location ID']}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             <div className="flex items-center">
                               <Clock className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                               {procedure['Duration (Minutes)']} min
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             <div className="flex items-center">
                               <DollarSign className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                               {/* Add a lookup to get cost from billing record */}
@@ -441,7 +427,7 @@ const PatientHistoryPage = () => {
                               Pending
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             {/* Payment method from billing record */}
                             Not Available
                           </td>
@@ -454,7 +440,7 @@ const PatientHistoryPage = () => {
                 <div className="text-center py-12 bg-gray-50">
                   <Calendar className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">No procedures found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-black">
                     This patient has no recorded procedures at this practice.
                   </p>
                 </div>

@@ -21,7 +21,7 @@ export default function MetricCard({ title, value, icon: Icon, trend, descriptio
             <Icon className="w-6 h-6 text-blue-500" />
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+            <h3 className="text-sm font-medium text-black">{title}</h3>
             <div className="text-2xl font-semibold mt-1">{value}</div>
           </div>
         </div>
@@ -29,14 +29,14 @@ export default function MetricCard({ title, value, icon: Icon, trend, descriptio
           <div className={`text-sm ${
             trend.direction === 'up' ? 'text-green-600' :
             trend.direction === 'down' ? 'text-red-600' :
-            'text-gray-600'
+            'text-black'
           }`}>
             {trend.value}
           </div>
         )}
       </div>
       {description && (
-        <p className="text-sm text-gray-500 mt-2">{description}</p>
+        <p className="text-sm text-black mt-2">{description}</p>
       )}
     </div>
   );

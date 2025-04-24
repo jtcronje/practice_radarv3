@@ -191,49 +191,49 @@ const FinancialAnalysis = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Revenue Generated */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h3 className="text-sm font-medium text-gray-500">Revenue Generated</h3>
+                <h3 className="text-sm font-medium text-black">Revenue Generated</h3>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(revenue)}</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.revenue >= 0 ? "text-green-500" : "text-red-500"}>
                     {trends.revenue >= 0 ? "↑" : "↓"} {Math.abs(trends.revenue)}%
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">vs previous period</span>
+                  <span className="text-xs text-black ml-1">vs previous period</span>
                 </div>
               </div>
               
               {/* Billings Received */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h3 className="text-sm font-medium text-gray-500">Billings Received</h3>
+                <h3 className="text-sm font-medium text-black">Billings Received</h3>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(received)}</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.received >= 0 ? "text-green-500" : "text-red-500"}>
                     {trends.received >= 0 ? "↑" : "↓"} {Math.abs(trends.received)}%
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">vs previous period</span>
+                  <span className="text-xs text-black ml-1">vs previous period</span>
                 </div>
               </div>
               
               {/* Billings Outstanding */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h3 className="text-sm font-medium text-gray-500">Billings Outstanding</h3>
+                <h3 className="text-sm font-medium text-black">Billings Outstanding</h3>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(outstanding)}</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.outstanding < 0 ? "text-green-500" : "text-red-500"}>
                     {trends.outstanding >= 0 ? "↑" : "↓"} {Math.abs(trends.outstanding)}%
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">vs previous period</span>
+                  <span className="text-xs text-black ml-1">vs previous period</span>
                 </div>
               </div>
               
               {/* Medical Aid Percentage */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h3 className="text-sm font-medium text-gray-500">Medical Aid Payments</h3>
+                <h3 className="text-sm font-medium text-black">Medical Aid Payments</h3>
                 <p className="text-2xl font-bold mt-1">{medicalAidPercentage}%</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.medicalAidPercentage >= 0 ? "text-green-500" : "text-red-500"}>
                     {trends.medicalAidPercentage >= 0 ? "↑" : "↓"} {Math.abs(trends.medicalAidPercentage)}%
                   </span>
-                  <span className="text-xs text-gray-500 ml-1">vs previous period</span>
+                  <span className="text-xs text-black ml-1">vs previous period</span>
                 </div>
               </div>
             </div>
@@ -241,7 +241,7 @@ const FinancialAnalysis = () => {
             {/* AI Trend Analysis */}
             <div className="bg-white rounded-lg p-4 shadow mb-6">
               <h2 className="text-lg font-medium mb-3">AI Trend Analysis</h2>
-              <p className="text-gray-600">
+              <p className="text-black">
                 {trends.revenue > 0 && trends.received > 0 ? (
                   <span>
                     <span className="font-medium text-green-600">Positive financial trend detected.</span> Revenue has increased by {trends.revenue}% compared to the previous period, with billings received also showing growth at {trends.received}%. 
@@ -348,15 +348,15 @@ const FinancialAnalysis = () => {
             {/* AI Chart Analysis */}
             <div className="bg-white rounded-lg p-4 shadow mb-6">
               <h2 className="text-lg font-medium mb-3">AI Chart Interpretation</h2>
-              <p className="text-gray-600 mb-3">
+              <p className="text-black mb-3">
                 <span className="font-medium">Claim Size Analysis:</span> The majority of claims fall in the $1,001-$2,000 range, indicating this is your practice's typical procedure value. 
                 Consider optimizing billing for procedures in this range to maximize efficiency.
               </p>
-              <p className="text-gray-600 mb-3">
+              <p className="text-black mb-3">
                 <span className="font-medium">Payment Source:</span> Medical aid payments constitute 76.5% of your revenue, providing a stable income base. 
                 The remaining 23.5% from patient payments shows a healthy direct payment component.
               </p>
-              <p className="text-gray-600">
+              <p className="text-black">
                 <span className="font-medium">Payment Delays:</span> Medical aid payments typically resolve within 15-30 days, with fewer cases extending beyond 60 days. 
                 Patient payments show a wider distribution with more cases extending into the 31-60 day range. 
                 Consider implementing automated reminders for patient payments after 30 days to improve collection times.
@@ -402,16 +402,16 @@ const FinancialAnalysis = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {claim.id}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           {claim.date}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           {claim.patient}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                           {formatCurrency(claim.amount)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             claim.responsible === 'Medical Aid' 
                               ? 'bg-blue-100 text-blue-800' 
@@ -420,7 +420,7 @@ const FinancialAnalysis = () => {
                             {claim.responsible}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           <button className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded text-xs">
                             Follow Up
                           </button>
@@ -431,7 +431,7 @@ const FinancialAnalysis = () => {
                 </table>
               </div>
               
-              <div className="text-sm text-gray-500 mt-4">
+              <div className="text-sm text-black mt-4">
                 Showing {outstandingClaims.length} outstanding claims
               </div>
             </div>

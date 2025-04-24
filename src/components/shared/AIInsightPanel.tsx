@@ -25,18 +25,18 @@ export default function AIInsightPanel({ insights }: AIInsightPanelProps) {
         {insights.map((insight, index) => (
           <div key={index} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
             <h3 className="font-medium text-gray-900 mb-2">{insight.title}</h3>
-            <p className="text-gray-600 text-sm mb-3">{insight.description}</p>
+            <p className="text-black text-sm mb-3">{insight.description}</p>
             {insight.metrics && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {insight.metrics.map((metric, idx) => (
                   <div key={idx} className="bg-gray-50 p-3 rounded">
-                    <div className="text-sm text-gray-500">{metric.label}</div>
+                    <div className="text-sm text-black">{metric.label}</div>
                     <div className="font-semibold">{metric.value}</div>
                     {metric.change && (
                       <div className={`text-sm ${
                         metric.trend === 'up' ? 'text-green-600' :
                         metric.trend === 'down' ? 'text-red-600' :
-                        'text-gray-600'
+                        'text-black'
                       }`}>
                         {metric.change}
                       </div>
