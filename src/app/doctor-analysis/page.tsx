@@ -93,7 +93,11 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, trend, icon, colo
           </div>
         )}
       </div>
-    </div>
+      {/* User Indicator */}
+  <div className="fixed bottom-4 left-4 bg-white bg-opacity-90 rounded-lg px-4 py-2 shadow text-sm text-blue-900 font-medium z-50">
+    Dr. Ras is logged in
+  </div>
+</div>
   );
 };
 
@@ -687,7 +691,11 @@ const DoctorAnalysisPage = () => {
           </>
         )}
       </div>
-    </div>
+      {/* User Indicator */}
+  <div className="fixed bottom-4 left-4 bg-white bg-opacity-90 rounded-lg px-4 py-2 shadow text-sm text-blue-900 font-medium z-50">
+    Dr. Ras is logged in
+  </div>
+</div>
   );
 };
 

@@ -115,18 +115,16 @@ const FinancialAnalysis = () => {
 
     // claim size distribution
     const buckets = [
-      { name: 'R0-500', min: 0, max: 500 },
-      { name: 'R501-1000', min: 501, max: 1000 },
-      { name: 'R1001-5000', min: 1001, max: 5000 },
-      { name: 'R5001+', min: 5001, max: Infinity }
+      { name: '0-2500', min: 0, max: 2500 },
+      { name: '2500-5000', min: 2500, max: 5000 },
+      { name: '5000-7500', min: 5000, max: 7500 },
+      { name: '7500-10000', min: 7500, max: 10000 },
+      { name: '10000+', min: 10000, max: Infinity }
     ];
     setClaimSizeData(
       buckets.map(b => ({
         name: b.name,
-        value: _.sumBy(
-          filtered.filter(r => r['Billed Amount'] >= b.min && r['Billed Amount'] <= b.max),
-          'Billed Amount'
-        )
+        value: filtered.filter(r => r['Billed Amount'] >= b.min && r['Billed Amount'] < b.max).length
       }))
     );
 
@@ -296,7 +294,30 @@ const FinancialAnalysis = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{ fill: '#000' }} />
                       <YAxis tick={{ fill: '#000' }} domain={['dataMin', 'dataMax']} />
-                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Tooltip 
+  content={({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value;
+      const name = payload[0].name;
+      // Try to get percent from payload (recharts doesn't provide it directly)
+      // Instead, we calculate percent using the Pie's data array
+      let percent = null;
+      if (payload[0].payload && payload[0].payload.value && payload[0].payload.data) {
+        const total = payload[0].payload.data.reduce((sum, d) => sum + d.value, 0);
+        percent = total ? Math.round((value / total) * 100) : null;
+      }
+      return (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', padding: 10, color: '#000', borderRadius: 4 }}>
+          <span style={{ fontWeight: 600 }}>{name}</span><br />
+          {percent !== null
+            ? `${value} (${percent}%)`
+            : value}
+        </div>
+      );
+    }
+    return null;
+  }}
+/>
                       <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                       <Bar dataKey="value" name="Number of Claims" fill="#0088FE" />
                     </BarChart>
@@ -324,7 +345,30 @@ const FinancialAnalysis = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Tooltip 
+  content={({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value;
+      const name = payload[0].name;
+      // Try to get percent from payload (recharts doesn't provide it directly)
+      // Instead, we calculate percent using the Pie's data array
+      let percent = null;
+      if (payload[0].payload && payload[0].payload.value && payload[0].payload.data) {
+        const total = payload[0].payload.data.reduce((sum, d) => sum + d.value, 0);
+        percent = total ? Math.round((value / total) * 100) : null;
+      }
+      return (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', padding: 10, color: '#000', borderRadius: 4 }}>
+          <span style={{ fontWeight: 600 }}>{name}</span><br />
+          {percent !== null
+            ? `${value} (${percent}%)`
+            : value}
+        </div>
+      );
+    }
+    return null;
+  }}
+/>
                       <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
@@ -340,7 +384,30 @@ const FinancialAnalysis = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{ fill: '#000' }} />
                       <YAxis tick={{ fill: '#000' }} />
-                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Tooltip 
+  content={({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value;
+      const name = payload[0].name;
+      // Try to get percent from payload (recharts doesn't provide it directly)
+      // Instead, we calculate percent using the Pie's data array
+      let percent = null;
+      if (payload[0].payload && payload[0].payload.value && payload[0].payload.data) {
+        const total = payload[0].payload.data.reduce((sum, d) => sum + d.value, 0);
+        percent = total ? Math.round((value / total) * 100) : null;
+      }
+      return (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', padding: 10, color: '#000', borderRadius: 4 }}>
+          <span style={{ fontWeight: 600 }}>{name}</span><br />
+          {percent !== null
+            ? `${value} (${percent}%)`
+            : value}
+        </div>
+      );
+    }
+    return null;
+  }}
+/>
                       <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                       <Bar dataKey="value" name="Number of Claims" fill="#00C49F" />
                     </BarChart>
@@ -357,7 +424,30 @@ const FinancialAnalysis = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{ fill: '#000' }} />
                       <YAxis tick={{ fill: '#000' }} />
-                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Tooltip 
+  content={({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value;
+      const name = payload[0].name;
+      // Try to get percent from payload (recharts doesn't provide it directly)
+      // Instead, we calculate percent using the Pie's data array
+      let percent = null;
+      if (payload[0].payload && payload[0].payload.value && payload[0].payload.data) {
+        const total = payload[0].payload.data.reduce((sum, d) => sum + d.value, 0);
+        percent = total ? Math.round((value / total) * 100) : null;
+      }
+      return (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', padding: 10, color: '#000', borderRadius: 4 }}>
+          <span style={{ fontWeight: 600 }}>{name}</span><br />
+          {percent !== null
+            ? `${value} (${percent}%)`
+            : value}
+        </div>
+      );
+    }
+    return null;
+  }}
+/>
                       <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                       <Bar dataKey="value" name="Number of Claims" fill="#FFBB28" />
                     </BarChart>
@@ -459,7 +549,11 @@ const FinancialAnalysis = () => {
           </>
         )}
       </div>
-    </div>
+      {/* User Indicator */}
+  <div className="fixed bottom-4 left-4 bg-white bg-opacity-90 rounded-lg px-4 py-2 shadow text-sm text-blue-900 font-medium z-50">
+    Dr. Ras is logged in
+  </div>
+</div>
   );
 };
 
