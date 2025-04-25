@@ -534,4 +534,3 @@ const MBTScenarioModeling = () => {
   );
 };
 
-export default MBTScenarioModeling;

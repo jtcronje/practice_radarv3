@@ -36,15 +36,24 @@ const FinancialAnalysis = () => {
   });
   
   // State for charts data
-  const [claimSizeData, setClaimSizeData] = useState([]);
-  const [paymentSourceData, setPaymentSourceData] = useState([]);
-  const [paymentDelays, setPaymentDelays] = useState({
+  const [claimSizeData, setClaimSizeData] = useState<{ name: string; value: number }[]>([]);
+  const [paymentSourceData, setPaymentSourceData] = useState<{ name: string; value: number }[]>([]);
+  const [paymentDelays, setPaymentDelays] = useState<{
+    medicalAid: { name: string; value: number }[];
+    patient: { name: string; value: number }[];
+  }>({
     medicalAid: [],
     patient: []
   });
   
   // State for outstanding claims
-  const [outstandingClaims, setOutstandingClaims] = useState([]);
+  const [outstandingClaims, setOutstandingClaims] = useState<{
+    id: string;
+    date: string;
+    amount: number;
+    responsible: string;
+    patient: string;
+  }[]>([]);
   
   // State for data
   const [billingData, setBillingData] = useState<BillingRecord[]>([]);
@@ -77,10 +86,10 @@ const FinancialAnalysis = () => {
   }, []);
   
   // Format currency helper
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'ZAR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
@@ -111,12 +120,12 @@ const FinancialAnalysis = () => {
       
       // Set claim size distribution data
       setClaimSizeData([
-        { name: '$0-500', value: 320 * (timeFrame/30) },
-        { name: '$501-1000', value: 780 * (timeFrame/30) },
-        { name: '$1001-2000', value: 1100 * (timeFrame/30) },
-        { name: '$2001-5000', value: 640 * (timeFrame/30) },
-        { name: '$5001-10000', value: 230 * (timeFrame/30) },
-        { name: '$10000+', value: 120 * (timeFrame/30) }
+        { name: 'R0-500', value: 320 * (timeFrame/30) },
+        { name: 'R501-1000', value: 780 * (timeFrame/30) },
+        { name: 'R1001-2000', value: 1100 * (timeFrame/30) },
+        { name: 'R2001-5000', value: 640 * (timeFrame/30) },
+        { name: 'R5001-10000', value: 230 * (timeFrame/30) },
+        { name: 'R10000+', value: 120 * (timeFrame/30) }
       ]);
       
       // Set payment source data
@@ -162,12 +171,12 @@ const FinancialAnalysis = () => {
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto p-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">Financial Analysis</h1>
+            <h1 className="text-2xl font-bold text-black">Financial Analysis</h1>
             <div>
               <select
                 value={timeFrame}
                 onChange={(e) => setTimeFrame(Number(e.target.value))}
-                className="border border-gray-300 rounded p-2 bg-white text-gray-700"
+                className="border border-gray-300 rounded p-2 bg-white text-black"
               >
                 <option value={30}>Last 30 days</option>
                 <option value={60}>Last 60 days</option>
@@ -192,7 +201,7 @@ const FinancialAnalysis = () => {
               {/* Revenue Generated */}
               <div className="bg-white rounded-lg p-4 shadow">
                 <h3 className="text-sm font-medium text-black">Revenue Generated</h3>
-                <p className="text-2xl font-bold mt-1">{formatCurrency(revenue)}</p>
+                <p className="text-2xl font-bold mt-1 text-black">{formatCurrency(revenue)}</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.revenue >= 0 ? "text-green-500" : "text-red-500"}>
                     {trends.revenue >= 0 ? "↑" : "↓"} {Math.abs(trends.revenue)}%
@@ -204,7 +213,7 @@ const FinancialAnalysis = () => {
               {/* Billings Received */}
               <div className="bg-white rounded-lg p-4 shadow">
                 <h3 className="text-sm font-medium text-black">Billings Received</h3>
-                <p className="text-2xl font-bold mt-1">{formatCurrency(received)}</p>
+                <p className="text-2xl font-bold mt-1 text-black">{formatCurrency(received)}</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.received >= 0 ? "text-green-500" : "text-red-500"}>
                     {trends.received >= 0 ? "↑" : "↓"} {Math.abs(trends.received)}%
@@ -216,7 +225,7 @@ const FinancialAnalysis = () => {
               {/* Billings Outstanding */}
               <div className="bg-white rounded-lg p-4 shadow">
                 <h3 className="text-sm font-medium text-black">Billings Outstanding</h3>
-                <p className="text-2xl font-bold mt-1">{formatCurrency(outstanding)}</p>
+                <p className="text-2xl font-bold mt-1 text-black">{formatCurrency(outstanding)}</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.outstanding < 0 ? "text-green-500" : "text-red-500"}>
                     {trends.outstanding >= 0 ? "↑" : "↓"} {Math.abs(trends.outstanding)}%
@@ -228,7 +237,7 @@ const FinancialAnalysis = () => {
               {/* Medical Aid Percentage */}
               <div className="bg-white rounded-lg p-4 shadow">
                 <h3 className="text-sm font-medium text-black">Medical Aid Payments</h3>
-                <p className="text-2xl font-bold mt-1">{medicalAidPercentage}%</p>
+                <p className="text-2xl font-bold mt-1 text-black">{medicalAidPercentage}%</p>
                 <div className="mt-2 flex items-center">
                   <span className={trends.medicalAidPercentage >= 0 ? "text-green-500" : "text-red-500"}>
                     {trends.medicalAidPercentage >= 0 ? "↑" : "↓"} {Math.abs(trends.medicalAidPercentage)}%
@@ -240,7 +249,7 @@ const FinancialAnalysis = () => {
             
             {/* AI Trend Analysis */}
             <div className="bg-white rounded-lg p-4 shadow mb-6">
-              <h2 className="text-lg font-medium mb-3">AI Trend Analysis</h2>
+              <h2 className="text-lg font-medium text-black mb-3">AI Trend Analysis</h2>
               <p className="text-black">
                 {trends.revenue > 0 && trends.received > 0 ? (
                   <span>
@@ -268,15 +277,15 @@ const FinancialAnalysis = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Claim Size Distribution */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h2 className="text-lg font-medium mb-3">Claim Size Distribution</h2>
+                <h2 className="text-lg font-medium text-black mb-3">Claim Size Distribution</h2>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={claimSizeData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
+                      <XAxis dataKey="name" tick={{ fill: '#000' }} />
+                      <YAxis tick={{ fill: '#000' }} />
+                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                       <Bar dataKey="value" name="Number of Claims" fill="#0088FE" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -285,7 +294,7 @@ const FinancialAnalysis = () => {
               
               {/* Payment Source Pie Chart */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h2 className="text-lg font-medium mb-3">Payment Source Distribution</h2>
+                <h2 className="text-lg font-medium text-black mb-3">Payment Source Distribution</h2>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -303,8 +312,8 @@ const FinancialAnalysis = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
-                      <Legend />
+                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -312,15 +321,15 @@ const FinancialAnalysis = () => {
               
               {/* Medical Aid Payment Delay */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h2 className="text-lg font-medium mb-3">Medical Aid Payment Delay</h2>
+                <h2 className="text-lg font-medium text-black mb-3">Medical Aid Payment Delay</h2>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={paymentDelays.medicalAid} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
+                      <XAxis dataKey="name" tick={{ fill: '#000' }} />
+                      <YAxis tick={{ fill: '#000' }} />
+                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                       <Bar dataKey="value" name="Number of Claims" fill="#00C49F" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -329,15 +338,15 @@ const FinancialAnalysis = () => {
               
               {/* Patient Payment Delay */}
               <div className="bg-white rounded-lg p-4 shadow">
-                <h2 className="text-lg font-medium mb-3">Patient Payment Delay</h2>
+                <h2 className="text-lg font-medium text-black mb-3">Patient Payment Delay</h2>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={paymentDelays.patient} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
+                      <XAxis dataKey="name" tick={{ fill: '#000' }} />
+                      <YAxis tick={{ fill: '#000' }} />
+                      <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
+                      <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                       <Bar dataKey="value" name="Number of Claims" fill="#FFBB28" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -347,9 +356,9 @@ const FinancialAnalysis = () => {
             
             {/* AI Chart Analysis */}
             <div className="bg-white rounded-lg p-4 shadow mb-6">
-              <h2 className="text-lg font-medium mb-3">AI Chart Interpretation</h2>
+              <h2 className="text-lg font-medium text-black mb-3">AI Chart Interpretation</h2>
               <p className="text-black mb-3">
-                <span className="font-medium">Claim Size Analysis:</span> The majority of claims fall in the $1,001-$2,000 range, indicating this is your practice's typical procedure value. 
+                <span className="font-medium">Claim Size Analysis:</span> The majority of claims fall in the R1,001-R2,000 range, indicating this is your practice's typical procedure value. 
                 Consider optimizing billing for procedures in this range to maximize efficiency.
               </p>
               <p className="text-black mb-3">
@@ -366,7 +375,7 @@ const FinancialAnalysis = () => {
             {/* Outstanding Claims Table */}
             <div className="bg-white rounded-lg p-4 shadow">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium">Outstanding Claims</h2>
+                <h2 className="text-lg font-medium text-black">Outstanding Claims</h2>
                 <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                   Send All Reminders
                 </button>
@@ -376,22 +385,22 @@ const FinancialAnalysis = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Invoice ID
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Date Billed
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Patient
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Amount
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Responsible Party
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -408,7 +417,7 @@ const FinancialAnalysis = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                           {claim.patient}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black font-medium">
                           {formatCurrency(claim.amount)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">

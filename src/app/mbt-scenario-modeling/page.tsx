@@ -1,36 +1,6 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Calculator, Save, Trash2, LineChart as LineChartIcon } from 'lucide-react';
-import _ from 'lodash';
-
-// Import our utility functions for loading CSV data
-import { 
-  loadCSVData,
-  BillingRecord,
-  ProcedureRecord,
-  formatCurrency
-} from '@/utils/dataProcessing';
-
-// Define interface for our procedure model
-interface ProcedureModel {
-  id: string;
-  description: string;
-  currentMBT: number;
-  newMBT: number;
-  avgCost: number;
-  procedureCount: number;
-}
-
-// Define interface for our scenario
-interface Scenario {
-  id: string;
-  name: string;
-  procedures: ProcedureModel[];
-  totalRevenue: number;
-  revenueIncrease: number;
-}
+import { Save, Trash2, ArrowRight } from 'lucide-react';
 
 const MBTScenarioModeling = () => {
   const [timeperiods, setTimeperiods] = useState([
@@ -41,76 +11,81 @@ const MBTScenarioModeling = () => {
   ]);
   
   const [selectedTimePeriod, setSelectedTimePeriod] = useState('last30days');
-  const [procedures, setProcedures] = useState<ProcedureModel[]>([]);
-  const [scenarios, setScenarios] = useState<Scenario[]>([]);
-  const [activeScenario, setActiveScenario] = useState<string | null>(null);
-  const [newScenarioName, setNewScenarioName] = useState('New Scenario');
+  const [procedureData, setProcedureData] = useState([]);
+  const [scenarios, setScenarios] = useState([{ id: 'base', name: 'Base Scenario (Actual)' }]);
+  const [newScenarioName, setNewScenarioName] = useState('');
   const [comparison, setComparison] = useState({ scenario1: 'base', scenario2: null });
   const [comparisonData, setComparisonData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Load procedure data
+  // Simulate data fetching
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Load billing and procedure data
-        const billingData = await loadCSVData<BillingRecord>('billing.csv');
-        const proceduresData = await loadCSVData<ProcedureRecord>('procedures.csv');
-        
-        // Process data to get unique procedures with MBT info
-        const procedureGroups = _.groupBy(proceduresData, 'Procedure Code');
-        const billingGroups = _.groupBy(billingData, 'Procedure Record ID');
-        
-        // Create procedure models
-        const procedureModels: ProcedureModel[] = Object.keys(procedureGroups).map(code => {
-          const procs = procedureGroups[code];
-          const firstProc = procs[0];
-          const procCount = procs.length;
-          
-          // Get billing records for these procedures
-          const billingRecords = procs
-            .map(p => billingGroups[p['Procedure Record ID']] || [])
-            .flat();
-          
-          // Calculate average MBT and cost
-          const avgMBT = _.meanBy(billingRecords, b => b['MBT Percentage']) || 100;
-          const avgCost = _.meanBy(billingRecords, b => b['Billed Amount']) || 0;
-          
-          return {
-            id: code,
-            description: firstProc['Procedure Description'] || code,
-            currentMBT: avgMBT,
-            newMBT: avgMBT, // Start with current
-            avgCost,
-            procedureCount: procCount
-          };
-        });
-        
-        setProcedures(procedureModels);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error loading MBT data:', error);
-        setIsLoading(false);
-      }
-    };
+    // In a real implementation, you would fetch this data from your database
+    // based on the selected time period
+    setIsLoading(true);
     
-    loadData();
-  }, []);
+    // Simulated data - in reality, this would come from joining the procedures and billing tables
+    setTimeout(() => {
+      const simulatedData = [
+        {
+          id: 'PROC001',
+          description: 'General Anesthesia - 30 minutes',
+          currentMBT: 100,
+          newMBT: 100,
+          avgCost: 1500,
+          procedureCount: 45
+        },
+        {
+          id: 'PROC002',
+          description: 'Epidural Anesthesia',
+          currentMBT: 110,
+          newMBT: 110,
+          avgCost: 1800,
+          procedureCount: 30
+        },
+        {
+          id: 'PROC003',
+          description: 'Spinal Anesthesia',
+          currentMBT: 105,
+          newMBT: 105,
+          avgCost: 1600,
+          procedureCount: 38
+        },
+        {
+          id: 'PROC004',
+          description: 'Regional Nerve Block',
+          currentMBT: 95,
+          newMBT: 95,
+          avgCost: 1200,
+          procedureCount: 55
+        },
+        {
+          id: 'PROC005',
+          description: 'Monitored Anesthesia Care',
+          currentMBT: 90,
+          newMBT: 90,
+          avgCost: 950,
+          procedureCount: 70
+        }
+      ];
+      
+      setProcedureData(simulatedData);
+      setIsLoading(false);
+    }, 800);
+  }, [selectedTimePeriod]);
   
   // Handle MBT input change
   const handleMBTChange = (index, value) => {
-    const updatedData = [...procedures];
+    const updatedData = [...procedureData];
     updatedData[index].newMBT = parseInt(value) || 0;
-    setProcedures(updatedData);
+    setProcedureData(updatedData);
   };
   
   // Handle procedure count change
   const handleCountChange = (index, value) => {
-    const updatedData = [...procedures];
+    const updatedData = [...procedureData];
     updatedData[index].procedureCount = parseInt(value) || 0;
-    setProcedures(updatedData);
+    setProcedureData(updatedData);
   };
   
   // Calculate new revenue for a procedure
@@ -135,20 +110,18 @@ const MBTScenarioModeling = () => {
       id: scenarioId,
       name: newScenarioName,
       timeperiod: selectedTimePeriod,
-      procedures: procedures.map(proc => ({
+      procedures: procedureData.map(proc => ({
         ...proc,
         mbtPercentage: proc.newMBT,
         revenue: calculateNewRevenue(proc)
-      })),
-      totalRevenue: 0,
-      revenueIncrease: 0
+      }))
     };
     
     setScenarios([...scenarios, newScenario]);
     setNewScenarioName('');
     
     // Reset newMBT to currentMBT
-    setProcedures(procedures.map(proc => ({
+    setProcedureData(procedureData.map(proc => ({
       ...proc,
       newMBT: proc.currentMBT
     })));
@@ -171,7 +144,7 @@ const MBTScenarioModeling = () => {
   
   // Update comparison data whenever comparison selection changes
   useEffect(() => {
-    if (!comparison.scenario1 || !procedures.length) return;
+    if (!comparison.scenario1 || !procedureData.length) return;
     
     const scenario1 = scenarios.find(s => s.id === comparison.scenario1);
     const scenario2 = comparison.scenario2 ? scenarios.find(s => s.id === comparison.scenario2) : null;
@@ -179,7 +152,7 @@ const MBTScenarioModeling = () => {
     if (!scenario1) return;
     
     // For the base scenario, calculate based on current procedureData
-    const baseScenarioData = procedures.map(proc => ({
+    const baseScenarioData = procedureData.map(proc => ({
       id: proc.id,
       description: proc.description,
       revenue: calculateBaseRevenue(proc)
@@ -195,7 +168,7 @@ const MBTScenarioModeling = () => {
       : null;
     
     // Prepare comparison data
-    const comparisonChartData = procedures.map(proc => {
+    const comparisonChartData = procedureData.map(proc => {
       const scenario1Proc = scenario1Data.find(p => p.id === proc.id);
       const scenario2Proc = scenario2Data ? scenario2Data.find(p => p.id === proc.id) : null;
       
@@ -233,7 +206,7 @@ const MBTScenarioModeling = () => {
         : 0
     });
     
-  }, [comparison, scenarios, procedures]);
+  }, [comparison, scenarios, procedureData]);
   
   // Generate random colors for the bars in chart
   const getRandomColor = (index) => {
@@ -274,7 +247,7 @@ const MBTScenarioModeling = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Adjust MBT Percentages</h2>
             <div className="grid grid-cols-1 gap-4">
-              {procedures.map((procedure, index) => (
+              {procedureData.map((procedure, index) => (
                 <div key={procedure.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex-1">
@@ -294,7 +267,7 @@ const MBTScenarioModeling = () => {
                       </div>
                       
                       <div className="hidden md:flex items-center justify-center">
-                        <LineChartIcon className="text-gray-400" size={20} />
+                        <ArrowRight className="text-gray-400" size={20} />
                       </div>
                       
                       <div>
@@ -400,7 +373,7 @@ const MBTScenarioModeling = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {scenario.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {scenario.id === 'base' ? 'All periods' : 
                             timeperiods.find(t => t.value === scenario.timeperiod)?.label || scenario.timeperiod}
                         </td>
@@ -429,7 +402,7 @@ const MBTScenarioModeling = () => {
                   <h3 className="text-lg font-medium text-gray-800 mb-2">Revenue Comparison Summary</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white p-4 rounded-lg shadow">
-                      <p className="text-sm text-black mb-1">
+                      <p className="text-sm text-gray-500 mb-1">
                         {comparisonData.scenario1Name}
                       </p>
                       <p className="text-xl font-bold">
@@ -440,7 +413,7 @@ const MBTScenarioModeling = () => {
                     {comparisonData.scenario2Name && (
                       <>
                         <div className="bg-white p-4 rounded-lg shadow">
-                          <p className="text-sm text-black mb-1">
+                          <p className="text-sm text-gray-500 mb-1">
                             {comparisonData.scenario2Name}
                           </p>
                           <p className="text-xl font-bold">
@@ -449,7 +422,7 @@ const MBTScenarioModeling = () => {
                         </div>
                         
                         <div className={`bg-white p-4 rounded-lg shadow ${comparisonData.difference >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}>
-                          <p className="text-sm text-black mb-1">Difference</p>
+                          <p className="text-sm text-gray-500 mb-1">Difference</p>
                           <p className="text-xl font-bold flex items-center">
                             <span className={comparisonData.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
                               {comparisonData.difference >= 0 ? '+' : ''}
@@ -535,7 +508,7 @@ const MBTScenarioModeling = () => {
                       <p className="mt-2">
                         <strong>Key insights:</strong> {comparisonData.byProcedure.length > 0 && (
                           <>
-                            The most impacted procedure is "{procedures.find(p => p.id === comparisonData.byProcedure.reduce((prev, current) => {
+                            The most impacted procedure is "{procedureData.find(p => p.id === comparisonData.byProcedure.reduce((prev, current) => {
                               const prevDiff = Math.abs(
                                 (prev[comparisonData.scenario2Name] || 0) - 
                                 (prev[comparisonData.scenario1Name] || 0)
@@ -545,7 +518,7 @@ const MBTScenarioModeling = () => {
                                 (current[comparisonData.scenario1Name] || 0)
                               );
                               return prevDiff > currDiff ? prev : current;
-                            }).id)?.description || ''}".
+                            }).name)?.description || ''}".
                           </>
                         )} Consider reviewing your most profitable procedures to optimize your MBT strategy.
                       </p>
@@ -561,4 +534,3 @@ const MBTScenarioModeling = () => {
   );
 };
 
-export default MBTScenarioModeling;

@@ -479,11 +479,11 @@ const DoctorAnalysisPage = () => {
             <div className="bg-white p-4 rounded-lg shadow mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-black mb-2">
                     Doctor
                   </label>
                   <select
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     value={filters.selectedDoctor}
                     onChange={handleDoctorChange}
                   >
@@ -496,11 +496,11 @@ const DoctorAnalysisPage = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-black mb-2">
                     Compare With
                   </label>
                   <select
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     value={filters.comparisonDoctor}
                     onChange={handleComparisonChange}
                   >
@@ -519,35 +519,35 @@ const DoctorAnalysisPage = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-black mb-2">
                     Start Date
                   </label>
                   <input
                     type="date"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     value={filters.startDate}
                     onChange={(e) => handleDateChange('startDate', e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-black mb-2">
                     End Date
                   </label>
                   <input
                     type="date"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     value={filters.endDate}
                     onChange={(e) => handleDateChange('endDate', e.target.value)}
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-black mb-2">
                     Location
                   </label>
                   <select
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                     value={filters.location}
                     onChange={handleLocationChange}
                   >

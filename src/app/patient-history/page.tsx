@@ -11,7 +11,8 @@ import {
   formatDate,
   PatientRecord,
   ProcedureRecord,
-  BillingRecord
+  BillingRecord,
+  HospitalRecord
 } from '@/utils/dataProcessing';
 
 // Mock data based on the CSV structure
@@ -171,9 +172,13 @@ const PatientHistoryPage = () => {
   const [patientData, setPatientData] = useState<PatientRecord[]>([]);
   const [proceduresData, setProceduresData] = useState<ProcedureRecord[]>([]);
   const [billingData, setBillingData] = useState<BillingRecord[]>([]);
+  const [hospitalData, setHospitalData] = useState<HospitalRecord[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
   const [patientProcedures, setPatientProcedures] = useState<ProcedureRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchResults, setSearchResults] = useState<PatientRecord[]>([]);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const printRef = useRef(null);
   
   // Load data on component mount
@@ -186,10 +191,12 @@ const PatientHistoryPage = () => {
         const patients = await loadCSVData<PatientRecord>('patients.csv');
         const procedures = await loadCSVData<ProcedureRecord>('procedures.csv');
         const billing = await loadCSVData<BillingRecord>('billing.csv');
+        const hospitals = await loadCSVData<HospitalRecord>('hospitals.csv');
         
         setPatientData(patients);
         setProceduresData(procedures);
         setBillingData(billing);
+        setHospitalData(hospitals);
         
         setIsLoading(false);
       } catch (error) {
@@ -201,20 +208,47 @@ const PatientHistoryPage = () => {
     loadData();
   }, []);
 
+  // Handle clicks outside the search dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   useEffect(() => {
     if (searchQuery.length > 0) {
       const filtered = patientData.filter((patient: PatientRecord) => 
         `${patient['Patient First Name']} ${patient['Patient Last Name']}`.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      if (filtered.length > 0) {
+      setSearchResults(filtered);
+      setIsSearchDropdownOpen(filtered.length > 0);
+      
+      // Auto-select the patient if there's only one match and it's an exact match
+      if (filtered.length === 1 && 
+          `${filtered[0]['Patient First Name']} ${filtered[0]['Patient Last Name']}`.toLowerCase() === searchQuery.toLowerCase()) {
         setSelectedPatient(filtered[0]);
-      } else {
+      } else if (filtered.length === 0) {
         setSelectedPatient(null);
       }
     } else {
+      setSearchResults([]);
+      setIsSearchDropdownOpen(false);
       setSelectedPatient(null);
     }
   }, [searchQuery, patientData]);
+
+  const handlePatientSelect = (patient: PatientRecord) => {
+    setSelectedPatient(patient);
+    setSearchQuery(`${patient['Patient First Name']} ${patient['Patient Last Name']}`);
+    setIsSearchDropdownOpen(false);
+  };
 
   useEffect(() => {
     if (selectedPatient) {
@@ -257,22 +291,65 @@ const PatientHistoryPage = () => {
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-900">Patient History</h1>
             <div className="flex space-x-4">
-              <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden">
-                <div className="pl-4">
-                  <Search className="h-5 w-5 text-gray-400" />
+              <div ref={searchRef} className="relative">
+                <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden">
+                  <div className="pl-4">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search patient by name..."
+                    className="w-full px-4 py-2 focus:outline-none text-black"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onClick={() => {
+                      if (searchResults.length > 0) {
+                        setIsSearchDropdownOpen(true);
+                      }
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedPatient(null);
+                      }}
+                      className="pr-4"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search patient by name..."
-                  className="w-full px-4 py-2 focus:outline-none"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                
+                {/* Search results dropdown */}
+                {isSearchDropdownOpen && searchResults.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm">
+                    {searchResults.map((patient) => (
+                      <div
+                        key={patient['Patient ID']}
+                        className="cursor-pointer hover:bg-gray-100 px-4 py-2"
+                        onClick={() => handlePatientSelect(patient)}
+                      >
+                        <div className="flex justify-between">
+                          <span className="font-medium text-black">
+                            {patient['Patient First Name']} {patient['Patient Last Name']}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            ID: {patient['Patient ID']}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {calculateAge(patient['Patient Date of Birth'])} years • {patient['Patient Gender']} • {patient['Medical Aid Name']}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          
-          {/* Remove patient selection dropdown */}
         </div>
       </header>
 
@@ -404,8 +481,7 @@ const PatientHistoryPage = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {/* Use hospital name from a lookup if available */}
-                            {procedure['Location ID']}
+                            {hospitalData.find(h => h['Location ID'] === procedure['Location ID'])?.['Location Name'] || procedure['Location ID']}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             <div className="flex items-center">
