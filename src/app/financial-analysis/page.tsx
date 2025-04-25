@@ -5,7 +5,7 @@ import {
   BarChart, Bar, PieChart, Pie, XAxis, YAxis, 
   CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell 
 } from 'recharts';
-import { DollarSign, Calendar, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { } from 'lucide-react'; // All icons were unused and removed.
 import _ from 'lodash';
 
 // Import our utility functions for loading CSV data
@@ -13,8 +13,7 @@ import {
   loadCSVData,
   BillingRecord,
   ProcedureRecord,
-  filterByDateRange,
-  formatCurrency
+  filterByDateRange
 } from '@/utils/dataProcessing';
 
 const FinancialAnalysis = () => {
@@ -29,7 +28,7 @@ const FinancialAnalysis = () => {
   const [medicalAidPercentage, setMedicalAidPercentage] = useState(0);
   
   // State for trend data
-  const [trends, setTrends] = useState({
+  const [trends] = useState({
     revenue: 5.2,
     received: 3.8,
     outstanding: -2.1,
@@ -48,7 +47,7 @@ const FinancialAnalysis = () => {
   });
   
   // State for outstanding claims
-  const [outstandingClaims, setOutstandingClaims] = useState<{
+  const [outstandingClaims] = useState<{
     id: string;
     date: string;
     amount: number;
@@ -58,8 +57,6 @@ const FinancialAnalysis = () => {
   
   // State for data
   const [billingData, setBillingData] = useState<BillingRecord[]>([]);
-  const [proceduresData, setProceduresData] = useState<ProcedureRecord[]>([]);
-  const [period, setPeriod] = useState('last30days');
   
   // Chart colors
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -72,10 +69,7 @@ const FinancialAnalysis = () => {
         
         // Load data using our utility functions
         const billingData = await loadCSVData<BillingRecord>('billing.csv');
-        const proceduresData = await loadCSVData<ProcedureRecord>('procedures.csv');
-        
         setBillingData(billingData);
-        setProceduresData(proceduresData);
         setIsLoading(false);
       } catch (error) {
         console.error('Error loading financial data:', error);
@@ -460,7 +454,7 @@ const FinancialAnalysis = () => {
             <div className="bg-white rounded-lg p-4 shadow mb-6">
               <h2 className="text-lg font-medium text-black mb-3">AI Chart Interpretation</h2>
               <p className="text-black mb-3">
-                <span className="font-medium">Claim Size Analysis:</span> The majority of claims fall in the R1,001-R2,000 range, indicating this is your practice's typical procedure value. 
+                <span className="font-medium">Claim Size Analysis:</span> The majority of claims fall in the R1,001-R2,000 range, indicating this is your practice&apos;s typical procedure value. 
                 Consider optimizing billing for procedures in this range to maximize efficiency.
               </p>
               <p className="text-black mb-3">

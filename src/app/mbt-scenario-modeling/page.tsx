@@ -12,7 +12,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { Save, Trash2, ArrowRight } from 'lucide-react';
+import { Save, Trash2 } from 'lucide-react';
 
 const MBTScenarioModeling = () => {
   const [timeperiods] = useState([
@@ -27,10 +27,7 @@ const MBTScenarioModeling = () => {
     { id: 'base', name: 'Base Scenario (Actual)' }
   ]);
   const [newScenarioName, setNewScenarioName] = useState('');
-  const [comparison, setComparison] = useState<{ scenario1: string; scenario2: string | null }>({
-    scenario1: 'base',
-    scenario2: null
-  });
+
   const [comparisonData, setComparisonData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -152,7 +149,6 @@ const MBTScenarioModeling = () => {
     setProcedureData((prev) =>
       prev.map((p) => ({ ...p, newMBT: p.currentMBT }))
     );
-    setComparison({ scenario1: 'base', scenario2: id });
     // prepare comparison data for metrics and chart
     const scenarioName = newSc.name;
     const baseRev = procedureData.map((p) => ({ name: p.description, base: calculateBaseRevenue(p) }));
@@ -177,8 +173,6 @@ const MBTScenarioModeling = () => {
   const deleteScenario = (sid: string) =>
     setScenarios((prev) => prev.filter((s) => s.id !== sid));
 
-  const getRandomColor = (i: number) =>
-    ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][i % 5];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen text-black">

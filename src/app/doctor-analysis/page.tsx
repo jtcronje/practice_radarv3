@@ -462,11 +462,6 @@ const DoctorAnalysisPage = () => {
     }));
   };
   
-  // Get selected doctor name
-  const getSelectedDoctorName = () => {
-    const doctor = data.doctors.find(doc => doc['Provider ID'] === filters.selectedDoctor);
-    return doctor ? doctor['Provider Name'] : 'Select a doctor';
-  };
   
   return (
     <div className="bg-gray-50 min-h-screen p-4">

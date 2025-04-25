@@ -5,7 +5,6 @@ import {
   loadCSVData,
   PatientRecord,
   ProcedureRecord,
-  BillingRecord,
   DoctorRecord,
   formatDate
 } from '@/utils/dataProcessing';

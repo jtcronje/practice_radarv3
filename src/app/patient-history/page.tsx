@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Download, Calendar, Clock, DollarSign, Users, Printer } from 'lucide-react';
+import { Search, Calendar, Clock, DollarSign, Users, Printer } from 'lucide-react';
 import _ from 'lodash';
-import Papa from 'papaparse';
 
 import { 
   loadCSVData,
