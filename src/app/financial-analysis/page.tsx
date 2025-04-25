@@ -13,6 +13,7 @@ import {
   loadCSVData,
   BillingRecord,
   ProcedureRecord,
+  filterByDateRange,
   formatCurrency
 } from '@/utils/dataProcessing';
 
@@ -85,6 +86,87 @@ const FinancialAnalysis = () => {
     loadData();
   }, []);
   
+  // Load data when timeframe changes
+  useEffect(() => {
+    if (!billingData.length) return;
+    setIsLoading(true);
+    // filter records by selected timeframe
+    const filtered = filterByDateRange(
+      billingData,
+      'Date Billed / Claim Submit Date',
+      timeFrame.toString()
+    );
+
+    // compute metrics
+    const totalBilled = _.sumBy(filtered, 'Billed Amount');
+    const totalPaidMedicalAid = _.sumBy(filtered, 'Amount Paid - Medical Aid');
+    const totalPaidPatient = _.sumBy(filtered, 'Amount Paid - Patient');
+    const totalReceived = totalPaidMedicalAid + totalPaidPatient;
+    const totalOutstanding = _.sumBy(filtered, 'Outstanding Amount');
+
+    setRevenue(Math.round(totalBilled));
+    setReceived(Math.round(totalReceived));
+    setOutstanding(Math.round(totalOutstanding));
+    setMedicalAidPercentage(
+      totalBilled > 0
+        ? Number(((totalPaidMedicalAid / totalBilled) * 100).toFixed(1))
+        : 0
+    );
+
+    // claim size distribution
+    const buckets = [
+      { name: 'R0-500', min: 0, max: 500 },
+      { name: 'R501-1000', min: 501, max: 1000 },
+      { name: 'R1001-5000', min: 1001, max: 5000 },
+      { name: 'R5001+', min: 5001, max: Infinity }
+    ];
+    setClaimSizeData(
+      buckets.map(b => ({
+        name: b.name,
+        value: _.sumBy(
+          filtered.filter(r => r['Billed Amount'] >= b.min && r['Billed Amount'] <= b.max),
+          'Billed Amount'
+        )
+      }))
+    );
+
+    // payment source distribution
+    setPaymentSourceData([
+      { name: 'Medical Aid', value: totalPaidMedicalAid },
+      { name: 'Patient', value: totalPaidPatient }
+    ]);
+
+    // payment delays distribution
+    const getDelays = (paidField: keyof BillingRecord) => {
+      const delays: Record<string, number> = { '0-7':0, '8-14':0, '15-30':0, '31-60':0, '60+':0 };
+      filtered.forEach(r => {
+        const billed = new Date(r['Date Billed / Claim Submit Date']);
+        const paidStr = r[paidField] as string;
+        if (!paidStr) return;
+        const paid = new Date(paidStr);
+        const days = Math.floor((paid.getTime() - billed.getTime())/(1000*60*60*24));
+        if (days <= 7) delays['0-7']++;
+        else if (days <= 14) delays['8-14']++;
+        else if (days <= 30) delays['15-30']++;
+        else if (days <= 60) delays['31-60']++;
+        else delays['60+']++;
+      });
+      return [
+        { name: '0-7 days', value: delays['0-7'] },
+        { name: '8-14 days', value: delays['8-14'] },
+        { name: '15-30 days', value: delays['15-30'] },
+        { name: '31-60 days', value: delays['31-60'] },
+        { name: '60+ days', value: delays['60+'] }
+      ];
+    };
+    setPaymentDelays({
+      medicalAid: getDelays('Date Paid - Medical Aid'),
+      patient: getDelays('Date Paid - Patient')
+    });
+
+    setIsLoading(false);
+  }, [timeFrame, billingData]);
+  
   // Format currency helper
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-ZA', {
@@ -94,76 +176,6 @@ const FinancialAnalysis = () => {
       maximumFractionDigits: 0
     }).format(value);
   };
-  
-  // Load data when timeframe changes
-  useEffect(() => {
-    setIsLoading(true);
-    
-    // Simulate data loading with timeout
-    setTimeout(() => {
-      // Calculate financial metrics based on timeframe
-      const baseRevenue = 125000;
-      const multiplier = timeFrame / 30;
-      
-      setRevenue(Math.round(baseRevenue * multiplier));
-      setReceived(Math.round(baseRevenue * multiplier * 0.82));
-      setOutstanding(Math.round(baseRevenue * multiplier * 0.18));
-      setMedicalAidPercentage(76.5);
-      
-      // Set trends based on timeframe
-      setTrends({
-        revenue: timeFrame === 30 ? 5.2 : timeFrame === 60 ? 4.7 : timeFrame === 90 ? 8.3 : 12.1,
-        received: timeFrame === 30 ? 3.8 : timeFrame === 60 ? 6.2 : timeFrame === 90 ? 7.5 : 11.3,
-        outstanding: timeFrame === 30 ? -2.1 : timeFrame === 60 ? 0.8 : timeFrame === 90 ? 2.4 : 3.9,
-        medicalAidPercentage: timeFrame === 30 ? 1.4 : timeFrame === 60 ? 0.3 : timeFrame === 90 ? -0.8 : -1.2
-      });
-      
-      // Set claim size distribution data
-      setClaimSizeData([
-        { name: 'R0-500', value: 320 * (timeFrame/30) },
-        { name: 'R501-1000', value: 780 * (timeFrame/30) },
-        { name: 'R1001-2000', value: 1100 * (timeFrame/30) },
-        { name: 'R2001-5000', value: 640 * (timeFrame/30) },
-        { name: 'R5001-10000', value: 230 * (timeFrame/30) },
-        { name: 'R10000+', value: 120 * (timeFrame/30) }
-      ]);
-      
-      // Set payment source data
-      setPaymentSourceData([
-        { name: 'Medical Aid', value: 76.5 },
-        { name: 'Patient', value: 23.5 }
-      ]);
-      
-      // Set payment delay data
-      setPaymentDelays({
-        medicalAid: [
-          { name: '0-7 days', value: 155 * (timeFrame/30) },
-          { name: '8-14 days', value: 310 * (timeFrame/30) },
-          { name: '15-30 days', value: 430 * (timeFrame/30) },
-          { name: '31-60 days', value: 225 * (timeFrame/30) },
-          { name: '60+ days', value: 85 * (timeFrame/30) }
-        ],
-        patient: [
-          { name: '0-7 days', value: 110 * (timeFrame/30) },
-          { name: '8-14 days', value: 245 * (timeFrame/30) },
-          { name: '15-30 days', value: 360 * (timeFrame/30) },
-          { name: '31-60 days', value: 285 * (timeFrame/30) },
-          { name: '60+ days', value: 195 * (timeFrame/30) }
-        ]
-      });
-      
-      // Set outstanding claims data
-      setOutstandingClaims([
-        { id: 'INV-00176', date: '2024-02-15', amount: 2450.00, responsible: 'Medical Aid', patient: 'Johnson, R.' },
-        { id: 'INV-00293', date: '2024-02-27', amount: 1320.50, responsible: 'Patient', patient: 'Smith, E.' },
-        { id: 'INV-00312', date: '2024-03-03', amount: 4750.00, responsible: 'Medical Aid', patient: 'Williams, D.' },
-        { id: 'INV-00389', date: '2024-03-12', amount: 980.75, responsible: 'Patient', patient: 'Garcia, M.' },
-        { id: 'INV-00422', date: '2024-03-18', amount: 3125.00, responsible: 'Medical Aid', patient: 'Brown, M.' }
-      ]);
-      
-      setIsLoading(false);
-    }, 800);
-  }, [timeFrame]);
   
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -283,7 +295,7 @@ const FinancialAnalysis = () => {
                     <BarChart data={claimSizeData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{ fill: '#000' }} />
-                      <YAxis tick={{ fill: '#000' }} />
+                      <YAxis tick={{ fill: '#000' }} domain={['dataMin', 'dataMax']} />
                       <Tooltip contentStyle={{ color: '#000' }} labelStyle={{ color: '#000' }} itemStyle={{ color: '#000' }} />
                       <Legend wrapperStyle={{ color: '#000' }} formatter={(value) => <span style={{ color: '#000' }}>{value}</span>} />
                       <Bar dataKey="value" name="Number of Claims" fill="#0088FE" />

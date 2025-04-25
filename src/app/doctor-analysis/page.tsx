@@ -72,21 +72,21 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, trend, icon, colo
   return (
     <div className="bg-white p-4 rounded-lg shadow">
       <div className="flex items-center justify-between">
-        <h3 className="text-gray-500 text-sm font-medium">{title}</h3>
+        <h3 className="text-black text-sm font-medium">{title}</h3>
         <div className={`p-2 rounded-full bg-${color}-100`}>
           {icon}
         </div>
       </div>
       <div className="mt-2">
-        <div className="text-2xl font-semibold text-gray-900">{value}</div>
+        <div className="text-2xl font-semibold text-black">{value}</div>
         {trend && (
           <div className="flex items-center mt-1">
             {trend.direction === 'up' && <TrendingUp className="h-4 w-4 text-green-500 mr-1" />}
             {trend.direction === 'down' && <TrendingDown className="h-4 w-4 text-red-500 mr-1" />}
-            {trend.direction === 'neutral' && <Minus className="h-4 w-4 text-gray-500 mr-1" />}
+            {trend.direction === 'neutral' && <Minus className="h-4 w-4 text-black mr-1" />}
             <span className={`text-sm ${
               trend.direction === 'up' ? 'text-green-500' : 
-              trend.direction === 'down' ? 'text-red-500' : 'text-gray-500'
+              trend.direction === 'down' ? 'text-red-500' : 'text-black'
             }`}>
               {trend.value}
             </span>
@@ -467,7 +467,7 @@ const DoctorAnalysisPage = () => {
   return (
     <div className="bg-gray-50 min-h-screen p-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Doctor Performance Analysis</h1>
+        <h1 className="text-3xl font-bold text-black mb-6">Doctor Performance Analysis</h1>
         
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -513,7 +513,7 @@ const DoctorAnalysisPage = () => {
                         </option>
                       ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-black mt-1">
                     If none selected, comparison uses average of all other doctors
                   </p>
                 </div>
@@ -624,10 +624,10 @@ const DoctorAnalysisPage = () => {
             
             {/* Comparison Charts Section */}
             <div className="bg-white p-4 rounded-lg shadow mb-6">
-              <h2 className="text-xl font-semibold mb-4">Performance Comparison</h2>
+              <h2 className="text-xl font-semibold text-black mb-4">Performance Comparison</h2>
               
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Total Billings Trend</h3>
+                <h3 className="text-lg font-medium text-black mb-2">Total Billings Trend</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData.billings}>
@@ -656,7 +656,7 @@ const DoctorAnalysisPage = () => {
               </div>
               
               <div>
-                <h3 className="text-lg font-medium mb-2">Procedures Performed Trend</h3>
+                <h3 className="text-lg font-medium text-black mb-2">Procedures Performed Trend</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData.procedures}>

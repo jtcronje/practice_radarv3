@@ -1,536 +1,349 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Papa from 'papaparse';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 import { Save, Trash2, ArrowRight } from 'lucide-react';
 
 const MBTScenarioModeling = () => {
-  const [timeperiods, setTimeperiods] = useState([
+  const [timeperiods] = useState([
     { value: 'last30days', label: 'Last 30 Days' },
     { value: 'last90days', label: 'Last 90 Days' },
     { value: 'lastyear', label: 'Last Year' },
-    { value: 'ytd', label: 'Year to Date' },
+    { value: 'ytd', label: 'Year to Date' }
   ]);
-  
   const [selectedTimePeriod, setSelectedTimePeriod] = useState('last30days');
-  const [procedureData, setProcedureData] = useState([]);
-  const [scenarios, setScenarios] = useState([{ id: 'base', name: 'Base Scenario (Actual)' }]);
+  const [procedureData, setProcedureData] = useState<Array<any>>([]);
+  const [scenarios, setScenarios] = useState<Array<any>>([
+    { id: 'base', name: 'Base Scenario (Actual)' }
+  ]);
   const [newScenarioName, setNewScenarioName] = useState('');
-  const [comparison, setComparison] = useState({ scenario1: 'base', scenario2: null });
-  const [comparisonData, setComparisonData] = useState(null);
+  const [comparison, setComparison] = useState<{ scenario1: string; scenario2: string | null }>({
+    scenario1: 'base',
+    scenario2: null
+  });
+  const [comparisonData, setComparisonData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Simulate data fetching
+
   useEffect(() => {
-    // In a real implementation, you would fetch this data from your database
-    // based on the selected time period
     setIsLoading(true);
-    
-    // Simulated data - in reality, this would come from joining the procedures and billing tables
-    setTimeout(() => {
-      const simulatedData = [
-        {
-          id: 'PROC001',
-          description: 'General Anesthesia - 30 minutes',
-          currentMBT: 100,
-          newMBT: 100,
-          avgCost: 1500,
-          procedureCount: 45
-        },
-        {
-          id: 'PROC002',
-          description: 'Epidural Anesthesia',
-          currentMBT: 110,
-          newMBT: 110,
-          avgCost: 1800,
-          procedureCount: 30
-        },
-        {
-          id: 'PROC003',
-          description: 'Spinal Anesthesia',
-          currentMBT: 105,
-          newMBT: 105,
-          avgCost: 1600,
-          procedureCount: 38
-        },
-        {
-          id: 'PROC004',
-          description: 'Regional Nerve Block',
-          currentMBT: 95,
-          newMBT: 95,
-          avgCost: 1200,
-          procedureCount: 55
-        },
-        {
-          id: 'PROC005',
-          description: 'Monitored Anesthesia Care',
-          currentMBT: 90,
-          newMBT: 90,
-          avgCost: 950,
-          procedureCount: 70
-        }
-      ];
-      
-      setProcedureData(simulatedData);
+    const fetchData = async () => {
+      const now = new Date();
+      let start: Date;
+      switch (selectedTimePeriod) {
+        case 'last30days':
+          start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case 'last90days':
+          start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        case 'lastyear':
+          start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+        case 'ytd':
+          start = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          start = new Date(0);
+      }
+      const [procRes, billRes] = await Promise.all([
+        fetch('/data/procedures.csv'),
+        fetch('/data/billing.csv')
+      ]);
+      const [procText, billText] = await Promise.all([procRes.text(), billRes.text()]);
+      const procParsed = (Papa.parse(procText, { header: true }).data) as any[];
+      const billParsed = (Papa.parse(billText, { header: true }).data) as any[];
+      // Map record IDs for all procedures
+      const recordDescMap: Record<string, string> = {};
+      procParsed.forEach(row => {
+        recordDescMap[row['Procedure Record ID']] = row['Procedure Description'];
+      });
+      // Count procedure occurrences within selected period
+      const descCountMap: Record<string, number> = {};
+      procParsed.forEach(row => {
+        const procDate = new Date(row['Date of Service']);
+        if (procDate < start) return;
+        const desc = row['Procedure Description'];
+        descCountMap[desc] = (descCountMap[desc] || 0) + 1;
+      });
+      const mbtSumCount: Record<string, { sum: number; count: number }> = {};
+      billParsed.forEach(row => {
+        const date = new Date(row['Date Billed / Claim Submit Date']);
+        if (date < start) return;
+        const rid = row['Procedure Record ID'];
+        const desc = recordDescMap[rid];
+        if (!desc) return;
+        const mbt = parseFloat(row['MBT Percentage']) || 0;
+        if (!mbtSumCount[desc]) mbtSumCount[desc] = { sum: 0, count: 0 };
+        mbtSumCount[desc].sum += mbt;
+        mbtSumCount[desc].count += 1;
+      });
+      const costSumCount: Record<string, { sum: number; count: number }> = {};
+      billParsed.forEach(row => {
+        const date2 = new Date(row['Date Billed / Claim Submit Date']);
+        if (date2 < start) return;
+        const rid2 = row['Procedure Record ID'];
+        const desc2 = recordDescMap[rid2];
+        if (!desc2) return;
+        const billed = parseFloat(row['Billed Amount']) || 0;
+        if (!costSumCount[desc2]) costSumCount[desc2] = { sum: 0, count: 0 };
+        costSumCount[desc2].sum += billed;
+        costSumCount[desc2].count += 1;
+      });
+      const initialData = Object.entries(mbtSumCount).map(([desc, { sum, count }]) => ({
+        id: desc,
+        description: desc,
+        currentMBT: count > 0 ? sum / count : 0,
+        newMBT: count > 0 ? sum / count : 0,
+        avgCost: costSumCount[desc] && costSumCount[desc].count > 0
+          ? costSumCount[desc].sum / costSumCount[desc].count
+          : 0,
+        procedureCount: descCountMap[desc] || 0
+      }));
+      setProcedureData(initialData);
       setIsLoading(false);
-    }, 800);
+    };
+    fetchData();
   }, [selectedTimePeriod]);
-  
-  // Handle MBT input change
-  const handleMBTChange = (index, value) => {
-    const updatedData = [...procedureData];
-    updatedData[index].newMBT = parseInt(value) || 0;
-    setProcedureData(updatedData);
+
+  const handleMBTChange = (index: number, value: string) => {
+    const updated = [...procedureData];
+    updated[index].newMBT = parseInt(value, 10) || 0;
+    setProcedureData(updated);
   };
-  
-  // Handle procedure count change
-  const handleCountChange = (index, value) => {
-    const updatedData = [...procedureData];
-    updatedData[index].procedureCount = parseInt(value) || 0;
-    setProcedureData(updatedData);
+
+  const handleCountChange = (index: number, value: string) => {
+    const updated = [...procedureData];
+    updated[index].procedureCount = parseInt(value, 10) || 0;
+    setProcedureData(updated);
   };
-  
-  // Calculate new revenue for a procedure
-  const calculateNewRevenue = (procedure) => {
-    return (procedure.newMBT / procedure.currentMBT) * procedure.procedureCount * procedure.avgCost;
-  };
-  
-  // Calculate base revenue for a procedure
-  const calculateBaseRevenue = (procedure) => {
-    return procedure.procedureCount * procedure.avgCost;
-  };
-  
-  // Create a new scenario
+
+  const calculateNewRevenue = (proc: any) =>
+    (proc.newMBT / proc.currentMBT) * proc.procedureCount * proc.avgCost;
+  const calculateBaseRevenue = (proc: any) => proc.procedureCount * proc.avgCost;
+
   const createScenario = () => {
     if (!newScenarioName.trim()) {
       alert('Please provide a scenario name');
       return;
     }
-    
-    const scenarioId = `scenario_${Date.now()}`;
-    const newScenario = {
-      id: scenarioId,
+    const id = `scenario_${Date.now()}`;
+    const newSc = {
+      id,
       name: newScenarioName,
       timeperiod: selectedTimePeriod,
-      procedures: procedureData.map(proc => ({
-        ...proc,
-        mbtPercentage: proc.newMBT,
-        revenue: calculateNewRevenue(proc)
+      procedures: procedureData.map((p) => ({
+        ...p,
+        mbtPercentage: p.newMBT,
+        revenue: calculateNewRevenue(p)
       }))
     };
-    
-    setScenarios([...scenarios, newScenario]);
+    setScenarios((prev) => [...prev, newSc]);
     setNewScenarioName('');
-    
-    // Reset newMBT to currentMBT
-    setProcedureData(procedureData.map(proc => ({
-      ...proc,
-      newMBT: proc.currentMBT
-    })));
-    
-    // Set this as the second comparison item
-    setComparison({ ...comparison, scenario2: scenarioId });
-  };
-  
-  // Delete a scenario
-  const deleteScenario = (scenarioId) => {
-    setScenarios(scenarios.filter(s => s.id !== scenarioId));
-    
-    // Update comparison if needed
-    if (comparison.scenario1 === scenarioId) {
-      setComparison({ ...comparison, scenario1: 'base' });
-    } else if (comparison.scenario2 === scenarioId) {
-      setComparison({ ...comparison, scenario2: null });
-    }
-  };
-  
-  // Update comparison data whenever comparison selection changes
-  useEffect(() => {
-    if (!comparison.scenario1 || !procedureData.length) return;
-    
-    const scenario1 = scenarios.find(s => s.id === comparison.scenario1);
-    const scenario2 = comparison.scenario2 ? scenarios.find(s => s.id === comparison.scenario2) : null;
-    
-    if (!scenario1) return;
-    
-    // For the base scenario, calculate based on current procedureData
-    const baseScenarioData = procedureData.map(proc => ({
-      id: proc.id,
-      description: proc.description,
-      revenue: calculateBaseRevenue(proc)
-    }));
-    
-    // For created scenarios, use their stored data
-    const scenario1Data = scenario1.id === 'base' 
-      ? baseScenarioData 
-      : scenario1.procedures;
-    
-    const scenario2Data = scenario2 
-      ? (scenario2.id === 'base' ? baseScenarioData : scenario2.procedures)
-      : null;
-    
-    // Prepare comparison data
-    const comparisonChartData = procedureData.map(proc => {
-      const scenario1Proc = scenario1Data.find(p => p.id === proc.id);
-      const scenario2Proc = scenario2Data ? scenario2Data.find(p => p.id === proc.id) : null;
-      
-      return {
-        name: proc.description.length > 20 
-          ? proc.description.substring(0, 20) + '...' 
-          : proc.description,
-        [scenario1.name]: scenario1Proc ? scenario1Proc.revenue : 0,
-        ...(scenario2Proc ? { [scenario2.name]: scenario2Proc.revenue } : {})
-      };
-    });
-    
-    // Calculate totals
-    const scenario1Total = scenario1Data.reduce((sum, proc) => sum + proc.revenue, 0);
-    const scenario2Total = scenario2Data 
-      ? scenario2Data.reduce((sum, proc) => sum + proc.revenue, 0) 
-      : 0;
-    
-    const totalData = [{
-      name: 'Total Revenue',
-      [scenario1.name]: scenario1Total,
-      ...(scenario2 ? { [scenario2.name]: scenario2Total } : {})
-    }];
-    
+    setProcedureData((prev) =>
+      prev.map((p) => ({ ...p, newMBT: p.currentMBT }))
+    );
+    setComparison({ scenario1: 'base', scenario2: id });
+    // prepare comparison data for metrics and chart
+    const scenarioName = newSc.name;
+    const baseRev = procedureData.map((p) => ({ name: p.description, base: calculateBaseRevenue(p) }));
+    const scenarioRev = procedureData.map((p) => ({ name: p.description, [scenarioName]: calculateNewRevenue(p) }));
+    const merged = baseRev.map((b, i) => ({ ...b, ...scenarioRev[i] }));
+    const baseTotal = merged.reduce((acc, curr) => acc + curr.base, 0);
+    const scenarioTotal = merged.reduce((acc, curr) => acc + (curr[scenarioName] || 0), 0);
+    const diff = scenarioTotal - baseTotal;
+    const pct = baseTotal ? ((diff / baseTotal) * 100).toFixed(1) + '%' : '0%';
     setComparisonData({
-      byProcedure: comparisonChartData,
-      totals: totalData,
-      scenario1Name: scenario1.name,
-      scenario2Name: scenario2 ? scenario2.name : null,
-      scenario1Total,
-      scenario2Total,
-      difference: scenario2 ? scenario2Total - scenario1Total : 0,
-      percentageChange: scenario2 
-        ? ((scenario2Total - scenario1Total) / scenario1Total * 100).toFixed(2) 
-        : 0
+      byProcedure: merged,
+      scenario1Name: 'Actual',
+      scenario2Name: scenarioName,
+      difference: diff,
+      percentageChange: pct,
+      baseTotal,
+      scenarioTotal
     });
-    
-  }, [comparison, scenarios, procedureData]);
-  
-  // Generate random colors for the bars in chart
-  const getRandomColor = (index) => {
-    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
-    return colors[index % colors.length];
   };
 
+
+  const deleteScenario = (sid: string) =>
+    setScenarios((prev) => prev.filter((s) => s.id !== sid));
+
+  const getRandomColor = (i: number) =>
+    ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'][i % 5];
+
   return (
-    <div className="flex flex-col space-y-6 p-6 bg-gray-50 min-h-screen">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">MBT Scenario Modeling</h1>
-        <p className="text-gray-600 mb-4">
-          Model the impact of changing MBT (Medical Aid Base Tariff) percentages on your practice's revenue.
-        </p>
-        
-        {/* Time Period Selector */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Time Period:</label>
-          <select 
-            className="block w-full md:w-64 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            value={selectedTimePeriod}
-            onChange={(e) => setSelectedTimePeriod(e.target.value)}
-          >
-            {timeperiods.map(period => (
-              <option key={period.value} value={period.value}>{period.label}</option>
-            ))}
-          </select>
-        </div>
+    <div className="p-6 bg-gray-50 min-h-screen text-black">
+      <h1 className="text-2xl font-bold mb-4">MBT Scenario Modeling</h1>
+      <div className="mb-4 flex items-center space-x-4">
+        <select
+          className="border px-2 py-1 rounded"
+          value={selectedTimePeriod}
+          onChange={(e) => setSelectedTimePeriod(e.target.value)}
+        >
+          {timeperiods.map((tp) => (
+            <option key={tp.value} value={tp.value}>
+              {tp.label}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          placeholder="New Scenario Name"
+          className="border px-2 py-1 rounded flex-1"
+          value={newScenarioName}
+          onChange={(e) => setNewScenarioName(e.target.value)}
+        />
+        <button
+          className="bg-blue-600 text-white px-4 py-1 rounded flex items-center"
+          onClick={createScenario}
+          disabled={isLoading}
+        >
+          <Save className="mr-2" />
+          Create Scenario
+        </button>
       </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : (
-        <>
-          {/* Procedure List */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Adjust MBT Percentages</h2>
-            <div className="grid grid-cols-1 gap-4">
-              {procedureData.map((procedure, index) => (
-                <div key={procedure.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-800">{procedure.description}</h3>
-                      <p className="text-sm text-gray-500">Avg. Cost: R{procedure.avgCost.toLocaleString()}</p>
-                    </div>
-                    
-                    <div className="flex flex-col md:flex-row gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Current MBT %</label>
-                        <input
-                          type="text"
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-700"
-                          value={procedure.currentMBT}
-                          readOnly
-                        />
-                      </div>
-                      
-                      <div className="hidden md:flex items-center justify-center">
-                        <ArrowRight className="text-gray-400" size={20} />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">New MBT %</label>
-                        <input
-                          type="number"
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                          value={procedure.newMBT}
-                          onChange={(e) => handleMBTChange(index, e.target.value)}
-                          min="0"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Procedure Count</label>
-                        <input
-                          type="number"
-                          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                          value={procedure.procedureCount}
-                          onChange={(e) => handleCountChange(index, e.target.value)}
-                          min="0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Create Scenario Section */}
-            <div className="mt-6 p-4 border border-dashed border-gray-300 rounded-lg">
-              <div className="flex flex-col md:flex-row md:items-center gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Scenario Name</label>
-                  <input
-                    type="text"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    value={newScenarioName}
-                    onChange={(e) => setNewScenarioName(e.target.value)}
-                    placeholder="Enter scenario name"
-                  />
-                </div>
-                
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center"
-                  onClick={createScenario}
-                >
-                  <Save className="mr-2" size={18} />
-                  Save Scenario
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Scenario Comparison */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Compare Scenarios</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Scenario 1</label>
-                <select 
-                  className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  value={comparison.scenario1}
-                  onChange={(e) => setComparison({...comparison, scenario1: e.target.value})}
-                >
-                  {scenarios.map(scenario => (
-                    <option key={scenario.id} value={scenario.id}>{scenario.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Scenario 2</label>
-                <select 
-                  className="block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  value={comparison.scenario2 || ''}
-                  onChange={(e) => setComparison({...comparison, scenario2: e.target.value || null})}
-                >
-                  <option value="">Select scenario</option>
-                  {scenarios.filter(s => s.id !== comparison.scenario1).map(scenario => (
-                    <option key={scenario.id} value={scenario.id}>{scenario.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            {/* Scenarios List */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-2">Saved Scenarios</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Period</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {scenarios.map(scenario => (
-                      <tr key={scenario.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {scenario.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {scenario.id === 'base' ? 'All periods' : 
-                            timeperiods.find(t => t.value === scenario.timeperiod)?.label || scenario.timeperiod}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {scenario.id !== 'base' && (
-                            <button
-                              className="text-red-600 hover:text-red-900 focus:outline-none flex items-center"
-                              onClick={() => deleteScenario(scenario.id)}
-                            >
-                              <Trash2 size={16} className="mr-1" />
-                              Delete
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            {/* Comparison Charts */}
-            {comparisonData && (
-              <div className="space-y-6">
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">Revenue Comparison Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow">
-                      <p className="text-sm text-gray-500 mb-1">
-                        {comparisonData.scenario1Name}
-                      </p>
-                      <p className="text-xl font-bold">
-                        R{comparisonData.scenario1Total.toLocaleString()}
-                      </p>
-                    </div>
-                    
-                    {comparisonData.scenario2Name && (
-                      <>
-                        <div className="bg-white p-4 rounded-lg shadow">
-                          <p className="text-sm text-gray-500 mb-1">
-                            {comparisonData.scenario2Name}
-                          </p>
-                          <p className="text-xl font-bold">
-                            R{comparisonData.scenario2Total.toLocaleString()}
-                          </p>
-                        </div>
-                        
-                        <div className={`bg-white p-4 rounded-lg shadow ${comparisonData.difference >= 0 ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}>
-                          <p className="text-sm text-gray-500 mb-1">Difference</p>
-                          <p className="text-xl font-bold flex items-center">
-                            <span className={comparisonData.difference >= 0 ? 'text-green-600' : 'text-red-600'}>
-                              {comparisonData.difference >= 0 ? '+' : ''}
-                              R{comparisonData.difference.toLocaleString()} 
-                              ({comparisonData.difference >= 0 ? '+' : ''}
-                              {comparisonData.percentageChange}%)
-                            </span>
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Total Revenue Chart */}
-                <div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">Total Revenue Comparison</h3>
-                  <div className="bg-white p-4 rounded-lg border border-gray-200 h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={comparisonData.totals}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => `R${value.toLocaleString()}`} />
-                        <Legend />
-                        <Bar dataKey={comparisonData.scenario1Name} fill="#8884d8" />
-                        {comparisonData.scenario2Name && (
-                          <Bar dataKey={comparisonData.scenario2Name} fill="#82ca9d" />
-                        )}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                
-                {/* Per Procedure Chart */}
-                <div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">Revenue by Procedure Type</h3>
-                  <div className="bg-white p-4 rounded-lg border border-gray-200" style={{ height: '400px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={comparisonData.byProcedure}
-                        layout="vertical"
-                        margin={{ top: 20, right: 30, left: 150, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" tickFormatter={(value) => `R${value.toLocaleString()}`} />
-                        <YAxis dataKey="name" type="category" width={140} />
-                        <Tooltip formatter={(value) => `R${value.toLocaleString()}`} />
-                        <Legend />
-                        <Bar dataKey={comparisonData.scenario1Name} fill="#8884d8" />
-                        {comparisonData.scenario2Name && (
-                          <Bar dataKey={comparisonData.scenario2Name} fill="#82ca9d" />
-                        )}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                
-                {/* AI Interpretation */}
-                {comparisonData.scenario2Name && (
-                  <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                    <h3 className="text-lg font-medium text-blue-800 mb-2">
-                      <span className="mr-2">✨</span>
-                      AI Analysis
-                    </h3>
-                    <div className="prose text-blue-900">
-                      {comparisonData.difference >= 0 ? (
-                        <p>
-                          The "{comparisonData.scenario2Name}" scenario shows a <strong className="text-green-700">positive impact of R{comparisonData.difference.toLocaleString()} ({comparisonData.percentageChange}%)</strong> compared to "{comparisonData.scenario1Name}". 
-                          {comparisonData.difference > 50000 ? 
-                            ' This significant increase suggests the MBT adjustments in this scenario could substantially improve your practice\'s revenue.' :
-                            ' While positive, this moderate increase suggests carefully considering whether the MBT adjustments justify any potential impact on patient relationships.'}
-                        </p>
-                      ) : (
-                        <p>
-                          The "{comparisonData.scenario2Name}" scenario shows a <strong className="text-red-700">decrease of R{Math.abs(comparisonData.difference).toLocaleString()} ({comparisonData.percentageChange}%)</strong> compared to "{comparisonData.scenario1Name}". 
-                          {comparisonData.difference < -50000 ? 
-                            ' This significant decrease suggests reconsidering the MBT adjustments in this scenario as they could substantially impact your practice\'s revenue.' :
-                            ' This moderate decrease might be acceptable if it leads to other benefits like increased patient volume or improved medical aid relationships.'}
-                        </p>
-                      )}
-                      
-                      <p className="mt-2">
-                        <strong>Key insights:</strong> {comparisonData.byProcedure.length > 0 && (
-                          <>
-                            The most impacted procedure is "{procedureData.find(p => p.id === comparisonData.byProcedure.reduce((prev, current) => {
-                              const prevDiff = Math.abs(
-                                (prev[comparisonData.scenario2Name] || 0) - 
-                                (prev[comparisonData.scenario1Name] || 0)
-                              );
-                              const currDiff = Math.abs(
-                                (current[comparisonData.scenario2Name] || 0) - 
-                                (current[comparisonData.scenario1Name] || 0)
-                              );
-                              return prevDiff > currDiff ? prev : current;
-                            }).name)?.description || ''}".
-                          </>
-                        )} Consider reviewing your most profitable procedures to optimize your MBT strategy.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+      <div className="mb-6 space-y-2">
+        {scenarios.map((s) => (
+          <div
+            key={s.id}
+            className="flex justify-between items-center bg-white p-2 rounded shadow-sm"
+          >
+            <span>{s.name}</span>
+            {s.id !== 'base' && (
+              <button
+                className="text-red-600"
+                onClick={() => deleteScenario(s.id)}
+              >
+                <Trash2 />
+              </button>
             )}
           </div>
-        </>
+        ))}
+      </div>
+      {!isLoading && procedureData.length > 0 && (
+        <div className="bg-white p-6 rounded-xl shadow mb-6 text-black">
+          <h2 className="text-xl font-semibold mb-4">Adjust MBT & Procedure Counts</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-2">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="text-left px-4 py-2 rounded-tl-lg">Procedure</th>
+                  <th className="text-left px-4 py-2">Avg Cost</th>
+                  <th className="text-left px-4 py-2">Current MBT (%)</th>
+                  <th className="text-left px-4 py-2">New MBT (%)</th>
+                  <th className="text-left px-4 py-2 rounded-tr-lg"># Procedures</th>
+                </tr>
+              </thead>
+              <tbody>
+                {procedureData.map((proc, idx) => (
+                  <tr key={proc.id} className="bg-white hover:bg-gray-50 transition">
+                    <td className="px-4 py-2 font-medium w-1/3 border border-gray-200 rounded-l-lg">{proc.description}</td>
+                    <td className="px-4 py-2 text-sm w-24">R{proc.avgCost.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}</td>
+                    <td className="px-4 py-2 text-sm w-20">{Math.round(proc.currentMBT)}%</td>
+                    <td className="px-4 py-2 w-24">
+                      <input
+                        type="number"
+                        min="0"
+                        value={Math.round(proc.newMBT)}
+                        onChange={(e) => handleMBTChange(idx, String(Math.round(Number(e.target.value))))}
+                        step={1}
+                        className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-400 text-black font-semibold text-center shadow-sm"
+                      />
+                    </td>
+                    <td className="px-4 py-2 w-24 rounded-r-lg">
+                      <input
+                        type="number"
+                        min="0"
+                        value={proc.procedureCount}
+                        onChange={(e) => handleCountChange(idx, e.target.value)}
+                        className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-400 text-black font-semibold text-center shadow-sm"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {comparisonData && (
+        <div className="space-y-6">
+          {/* Metrics */}
+          <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-2">
+            <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col items-center">
+              <span className="text-gray-500 text-sm mb-1">Base Revenue</span>
+              <span className="text-2xl font-bold text-blue-900">R{comparisonData.baseTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            </div>
+            <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col items-center">
+              <span className="text-gray-500 text-sm mb-1">Scenario Revenue</span>
+              <span className="text-2xl font-bold text-green-800">R{comparisonData.scenarioTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            </div>
+            <div className="flex-1 bg-white rounded-lg shadow p-4 flex flex-col items-center">
+              <span className="text-gray-500 text-sm mb-1">Difference</span>
+              <span className={`text-2xl font-bold ${comparisonData.difference >= 0 ? 'text-green-700' : 'text-red-700'}`}>{comparisonData.difference >= 0 ? '+' : '-'}R{Math.abs(comparisonData.difference).toLocaleString(undefined, { maximumFractionDigits: 0 })} ({comparisonData.percentageChange})</span>
+            </div>
+          </div>
+          {/* Revenue Comparison Chart */}
+          <div className="bg-white p-4 rounded shadow">
+            <h2 className="text-lg font-medium mb-2">Revenue Comparison</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={comparisonData.byProcedure} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fill: '#000' }} />
+                <YAxis type="number" tickFormatter={(v) => `R${v.toLocaleString()}`} />
+                <Tooltip formatter={(v) => `R${(v as number).toLocaleString()}`} />
+                <Legend />
+                <Bar dataKey="base" name="Actual" fill="#8884d8" />
+                <Bar
+                  dataKey={comparisonData.scenario2Name}
+                  name={comparisonData.scenario2Name}
+                  fill="#82ca9d"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* AI Analysis */}
+          <div className="bg-blue-50 p-4 rounded shadow">
+            <h3 className="text-blue-800 font-medium mb-2">AI Analysis</h3>
+            <p>
+              {comparisonData.difference >= 0 ? (
+                <span className="text-green-700">
+                  Positive impact of R{comparisonData.difference.toLocaleString()} ({comparisonData.percentageChange})
+                </span>
+              ) : (
+                <span className="text-red-700">
+                  Decrease of R{Math.abs(comparisonData.difference).toLocaleString()} ({comparisonData.percentageChange})
+                </span>
+              )}
+            </p>
+            {comparisonData.byProcedure.length > 0 && (
+              <p className="mt-2">
+                Most impacted procedure: <strong>
+                {
+                  comparisonData.byProcedure.reduce((prev: any, curr: any) =>
+                    Math.abs(curr[comparisonData.scenario2Name] - curr.base) >
+                    Math.abs(prev[comparisonData.scenario2Name] - prev.base)
+                      ? curr
+                      : prev
+                  ).name
+                }
+                </strong>
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
+export default MBTScenarioModeling;
